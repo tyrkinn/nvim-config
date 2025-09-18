@@ -1,5 +1,4 @@
 --[[
-
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
@@ -373,7 +372,7 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>f', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -497,6 +496,8 @@ require('lazy').setup({
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
           map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+
+          map('<leader>cf', vim.lsp.buf.format, '[C]ode [F]ormat')
 
           -- Opens a popup that displays documentation about the word under your cursor
           --  See `:help K` for why this keymap.
@@ -631,6 +632,7 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         typescript = { 'prettierd' },
+        ocaml = { 'ocamlformat' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -783,7 +785,6 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -876,38 +877,31 @@ require('lazy').setup({
   },
 })
 
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+-- Setup roc ls
+local lspconfig = require 'lspconfig'
 
--- Setup harpoon
-local api = require 'typescript-tools.api'
-vim.keymap.set('n', '<leader>if', api.add_missing_imports)
-local harpoon = require 'harpoon'
-harpoon:setup()
-vim.keymap.set('n', '<leader>a', function()
-  harpoon:list():add()
-end)
-vim.keymap.set('n', '<C-e>', function()
-  harpoon.ui:toggle_quick_menu(harpoon:list())
-end)
+-- require('lspconfig.configs').roc_lsp = {
+--   default_config = {
+--     cmd = { 'roc_language_server' },
+--     filetypes = 'roc',
+--     root_dir = function(fname)
+--       return lspconfig.util.find_git_ancestor(fname) or vim.loop.os_homedir()
+--     end,
+--     settings = {},
+--   },
+-- }
 
--- Toggle previous & next buffers stored within Harpoon list
-vim.keymap.set('n', '<C-p>', function()
-  harpoon:list():prev()
-end)
-vim.keymap.set('n', '<C-n>', function()
-  harpoon:list():next()
-end)
+lspconfig.gleam.setup {
+  filetypes = { 'gleam' },
+  cmd = { 'gleam', 'lsp' },
+  root_markers = { 'gleam.toml', '.git' },
+}
 
-vim.cmd [[
-  noremap <silent> <c-h> :<C-U>TmuxNavigateLeft<cr>
-  noremap <silent> <c-j> :<C-U>TmuxNavigateDown<cr>
-  noremap <silent> <c-k> :<C-U>TmuxNavigateUp<cr>
-  noremap <silent> <c-l> :<C-U>TmuxNavigateRight<cr>
-  noremap <silent> <c-\> :<C-U>TmuxNavigatePrevious<cr>
-]]
+lspconfig.roc_ls.setup {}
 
-require('lspconfig').tailwindcss.setup {
+lspconfig.ocamllsp.setup {}
+
+lspconfig.tailwindcss.setup {
   filetypes = { 'html', 'elm' },
   init_options = {
     userLanguages = {
@@ -948,4 +942,23 @@ require('lspconfig').tailwindcss.setup {
   },
 }
 
-vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
+require 'custom.commands.format_args'
+
+vim.keymap.set('n', '<leader>fa', function()
+  print(FormatArgs())
+end, { desc = '[F]ormat [A]rguments' })
+
+local harpoon = require 'harpoon'
+harpoon:setup()
+vim.keymap.set('n', '<leader>a', function()
+  harpoon:list():add()
+end)
+vim.keymap.set('n', '<C-e>', function()
+  harpoon.ui:toggle_quick_menu(harpoon:list())
+end)
+vim.keymap.set('n', '<C-p>', function()
+  harpoon:list():prev()
+end)
+vim.keymap.set('n', '<C-n>', function()
+  harpoon:list():next()
+end)
